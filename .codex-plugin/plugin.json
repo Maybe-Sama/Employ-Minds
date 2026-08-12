@@ -1,16 +1,7 @@
 {
   "name": "employ-minds",
-  "version": "1.0.0",
-  "description": "Employ-Minds project metadata. Codex integration is installed through AGENTS.md and .agents/skills.",
+  "version": "2.0.0",
+  "description": "Risk-adaptive native multi-agent engineering harness optimized for correctness per token.",
   "license": "MIT",
-  "keywords": [
-    "codex",
-    "agents",
-    "engineering",
-    "tdd",
-    "debugging",
-    "code-review",
-    "security",
-    "verification"
-  ]
+  "keywords": ["codex", "agents", "multi-agent", "engineering", "review", "verification", "token-efficiency"]
 }

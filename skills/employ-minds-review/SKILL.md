@@ -1,26 +1,17 @@
 ---
 name: employ-minds-review
-description: Two-pass engineering review: specification compliance first, code quality second.
+description: Independent diff-first review: specification compliance before engineering quality, with evidence rather than stylistic noise.
 ---
 # Employ-Minds Review
 
-Do not combine the passes.
+Review the **change**, not the entire repository. Start with the accepted requirement and final diff; expand context only to answer a concrete review question.
 
-## Pass 1 — specification compliance
-- Does every acceptance criterion have an implementation path?
-- Is required behavior missing?
-- Did scope drift introduce behavior the request did not authorize?
-- Do tests/evidence actually exercise the requested behavior and material edge cases?
+## Pass 1 — specification
+For every acceptance criterion: IMPLEMENTED? OBSERVABLE? EVIDENCE? Check missing behavior, accidental behavior, scope drift, and tests that appear relevant but do not exercise the requested path. Spec blockers stop the pipeline.
 
-Resolve spec blockers before quality review.
+## Pass 2 — quality
+Trace changed execution paths for correctness, invariants, error handling, state/resource lifecycle, concurrency, compatibility, performance/operational risk, maintainability, and meaningful test gaps.
 
-## Pass 2 — code quality
-- Correctness, invariants, error handling, concurrency and resource lifecycle.
-- Simplicity and consistency with repository architecture.
-- API/naming ergonomics and unnecessary complexity.
-- Test clarity, determinism and brittleness.
-- Material performance or operational concerns.
+Prioritize findings that can change runtime behavior or future engineering cost. Avoid style-only findings already enforced by tooling. A finding must include evidence and a concrete failure mode; uncertainty is labeled as such rather than upgraded to a defect.
 
-For CRITICAL work, prefer reviewers that did not implement the change. If independent agents are unavailable, perform a cold review from the diff and accepted spec rather than relying on implementation memory.
-
-Security-sensitive findings route through `employ-minds-security`. Any unresolved blocker prevents completion.
+STANDARD and CRITICAL use independent native reviewers. Reviewers do not fix their own findings: return to the writer, then re-review the resulting diff. Security-sensitive findings route to `employ-minds-security`.

@@ -1,0 +1,2 @@
+{"task_id":"example-only","system":"baseline","solved":true,"false_completion":false,"regression":false,"critical_miss":false,"reviewer_catches":0,"input_tokens":1000,"output_tokens":400,"wall_seconds":12.0,"notes":"Synthetic schema example; not a benchmark result."}
+{"task_id":"example-only","system":"employ-minds","solved":true,"false_completion":false,"regression":false,"critical_miss":false,"reviewer_catches":1,"input_tokens":800,"output_tokens":300,"wall_seconds":14.0,"notes":"Synthetic schema example; not a benchmark result."}

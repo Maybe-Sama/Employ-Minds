@@ -1,0 +1,14 @@
+[
+  {"id":"docs-typo","flags":[],"uncertainty":[],"expected":"fast"},
+  {"id":"local-ui-copy","flags":[],"uncertainty":[],"expected":"fast"},
+  {"id":"bounded-feature","flags":["multi-file change"],"uncertainty":[],"expected":"standard"},
+  {"id":"reproducible-bug","flags":["bug"],"uncertainty":[],"expected":"standard"},
+  {"id":"unknown-failing-test","flags":["bug"],"uncertainty":["failing test with unknown cause"],"expected":"critical"},
+  {"id":"authz-change","flags":["authorization"],"uncertainty":[],"expected":"critical"},
+  {"id":"payment-flow","flags":["payments"],"uncertainty":[],"expected":"critical"},
+  {"id":"db-migration","flags":["database migration"],"uncertainty":[],"expected":"critical"},
+  {"id":"delete-data","flags":["data deletion"],"uncertainty":[],"expected":"critical"},
+  {"id":"new-external-api","flags":["integration"],"uncertainty":["unfamiliar API"],"expected":"critical"},
+  {"id":"scope-expands","flags":[],"uncertainty":["scope expansion"],"expected":"standard"},
+  {"id":"large-refactor","flags":["large refactor"],"uncertainty":[],"expected":"critical"}
+]

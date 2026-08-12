@@ -1,67 +1,54 @@
 # Employ-Minds
 
-> **Employ the right mind for the risk.**
+> **Employ the right mind for the risk — and no more.**
 
 [![Validate](https://github.com/Maybe-Sama/Employ-Minds/actions/workflows/validate.yml/badge.svg)](https://github.com/Maybe-Sama/Employ-Minds/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Employ-Minds is a **risk-adaptive engineering harness for coding agents**. It combines the breadth of a full agent harness with the engineering discipline of TDD, root-cause debugging, independent review, security gates, and fresh verification — without installing two competing workflow governors.
+Employ-Minds is an **AI-assisted, risk-adaptive native multi-agent engineering harness** for Claude Code and Codex. Its objective is not maximum agent count; it is **maximum trustworthy engineering per unit of context, latency and cost**.
 
-It is designed for **Claude Code and Codex-style project agents** and intentionally keeps one canonical decision-maker: the **Employ-Minds Router**.
+It combines one small risk router with native specialist contexts, TDD/root-cause discipline, independent specification and quality review, security gates, and claim-mapped fresh verification.
 
-## Why it exists
-
-Broad harnesses are excellent at giving an agent more capabilities. Strict engineering workflows are excellent at making an agent less reckless. Stacking both wholesale often produces duplicate planning, duplicated reviews, conflicting instructions, and unnecessary ceremony.
-
-Employ-Minds takes a different approach:
+## The architecture
 
 ```text
-                         ┌──────────────────┐
-                         │   user request   │
-                         └────────┬─────────┘
-                                  │
-                         ┌────────▼─────────┐
-                         │ Employ-Minds     │
-                         │ Router           │
-                         └────────┬─────────┘
-                                  │
-                    ┌─────────────┼─────────────┐
-                    │             │             │
-                  FAST         STANDARD      CRITICAL
-                    │             │             │
-                    └──────┬──────┴──────┬──────┘
-                           │             │
-                     specialist minds + gates
-                           │             │
-                     fresh verification
+request
+  |
+  v
+risk router ---- FAST -----------------> smallest change -> fresh check
+  |
+  +---- STANDARD -> [Scout?] [Architect?] [Debugger/Researcher?]
+  |                    -> writer -> Spec Review -> Quality Review -> [Security?] -> Verifier
+  |
+  +---- CRITICAL -> explicit plan/rollback + isolated work
+                       -> writer -> Spec -> Quality -> Security -> Verifier
 ```
 
-One governor. Multiple specialist minds. Ceremony proportional to risk.
+`?` means **only when it adds information**. This is deliberate: multi-agent overhead is a tax, not a badge of sophistication.
 
-## Risk profiles
+## Native minds
 
-| Profile | Typical work | Required discipline |
-|---|---|---|
-| **FAST** | tiny/local change, obvious fix, docs, low blast radius | inspect → smallest change → self-review → focused fresh verification |
-| **STANDARD** | features, bugs, integrations, bounded refactors | plan → TDD for behavior → implement → spec review → quality review → relevant verification |
-| **CRITICAL** | auth, permissions, payments, migrations, secrets, destructive/data/security work, major refactors | research → explicit plan + rollback → TDD/equivalent evidence → independent reviews → security gate → strong verification |
+Employ-Minds 2.0 installs real project subagents, not role-play prompts:
 
-The profile can **escalate at any time**. A task that discovers production data, unclear root cause, a hidden dependency, or a wider blast radius stops being “small” just because it started that way.
+| Mind | Writes? | Job |
+|---|---:|---|
+| Scout | no | compact codebase map; keep noisy exploration out of parent context |
+| Architect | no | material design decisions, invariants, plan, rollback |
+| Researcher | no | current/versioned external facts from primary sources |
+| Debugger | no | reproduce and establish root cause before fixes |
+| Implementer | **yes** | bounded implementation; never self-certifies completion |
+| Spec Reviewer | no | independent acceptance-criteria compliance |
+| Quality Reviewer | no | independent correctness/architecture/test review |
+| Security Reviewer | no | independent trust-boundary/security/data gate |
+| Verifier | no | fresh claim -> check -> result ledger; final SHIP/NO-SHIP |
 
-## What gets installed
+Claude agents install under `.claude/agents/em-*.md`; Codex agents under `.codex/agents/em-*.toml`. Skills remain namespaced and project-local.
 
-Employ-Minds is repository-local. It does not replace your own project instructions.
+## Context economy
 
-```text
-CLAUDE.md                         # managed block only; your text is preserved
-AGENTS.md                         # managed block only; your text is preserved
-.claude/skills/employ-minds-*     # Claude project skills
-.claude/commands/employ-minds.md  # explicit Claude command
-.agents/skills/employ-minds-*     # Codex / compatible agent skills
-.employ-minds/                    # canonical policy, roles, rules, version, backups
-```
+Employ-Minds uses **progressive disclosure**: map/diff/symbols first, targeted snippets second, full files/logs only for a concrete unanswered question. Child agents keep raw exploration in their own context and return compact evidence packets. Review is diff-first. Ordinary independent fan-out is capped at three.
 
-The installer is **idempotent** and only owns the namespaced content above.
+The primary context retains decisions, acceptance criteria, unresolved uncertainty and final evidence — not transcripts.
 
 ## Install
 
@@ -70,118 +57,60 @@ Requires Python 3.9+.
 ```bash
 git clone https://github.com/Maybe-Sama/Employ-Minds.git
 cd Employ-Minds
-```
-
-### macOS / Linux
-
-```bash
 ./scripts/install.sh --project /path/to/project --target both
-```
-
-### Windows PowerShell
-
-```powershell
-.\scripts\install.ps1 --project C:\path\to\project --target both
-```
-
-Targets are `claude`, `codex`, or `both` (default).
-
-Validate the installation:
-
-```bash
 python scripts/doctor.py --project /path/to/project --target both
 ```
 
-Remove only Employ-Minds-managed content:
+Windows:
 
-```bash
-./scripts/uninstall.sh --project /path/to/project --target both
+```powershell
+.\scripts\install.ps1 --project C:\path\to\project --target both
+python .\scripts\doctor.py --project C:\path\to\project --target both
 ```
+
+Targets: `claude`, `codex`, `both`. Reinstallation is idempotent. Existing `CLAUDE.md`, `AGENTS.md`, unrelated skills and unrelated agents are preserved; uninstall removes only Employ-Minds-owned namespaces/blocks.
 
 ## Use
 
-Usually you do not need special prompting. Give the coding agent the task normally; the managed project instruction routes non-trivial engineering through `employ-minds-router`.
-
-When you want to be explicit in Claude Code, use:
+Usually, just ask for the engineering task. For explicit routing in Claude:
 
 ```text
-/employ-minds Implement the requested change. Route it by risk and do not claim completion without fresh evidence.
+/employ-minds Implement this. Use the minimum safe profile and do not claim success without fresh evidence.
 ```
 
-Or simply say:
+Or in either harness:
 
 ```text
-Use Employ-Minds. Pick the risk profile before editing and apply every gate required by that profile.
+Use Employ-Minds. Optimize quality per token; escalate only when evidence requires it.
 ```
 
-## The minds
+## Profiles
 
-The harness separates **thinking responsibilities** so one agent is not simultaneously author, reviewer, security auditor, and judge of its own success.
+- **FAST** — tiny/local/clear/low-risk: no ceremonial agent chain.
+- **STANDARD** — normal engineering: independent spec + quality + verifier; optional specialist minds only when needed.
+- **CRITICAL** — auth, money, secrets, migrations, destructive/data/security or high-blast-radius work: explicit rollback/data safety, independent reviews, security gate and strong verification.
 
-| Mind | Responsibility |
-|---|---|
-| Orchestrator | route, delegate, escalate, collect evidence, enforce stop conditions |
-| Architect | frame the problem, constraints, acceptance criteria, plan and rollback |
-| Researcher | resolve current/versioned external facts from primary sources |
-| Debugger | reproduce and identify root cause before patching |
-| Implementer | make a bounded change and report exact evidence |
-| Spec reviewer | decide whether the requested behavior was actually implemented |
-| Quality reviewer | correctness, architecture, maintainability, tests, lifecycle, concurrency |
-| Security reviewer | trust boundaries, authz, injection, secrets, destructive/data risks |
-| Verifier | independently map completion claims to fresh checks |
+Profiles escalate dynamically when uncertainty or blast radius grows.
 
-## Skills
-
-- `employ-minds-router` — risk classification, gate selection and dynamic escalation.
-- `employ-minds-brainstorm` — design exploration only when ambiguity is material.
-- `employ-minds-plan` — executable plan with files, tests, risks and rollback.
-- `employ-minds-tdd` — RED → GREEN → REFACTOR; regression-first bug fixing.
-- `employ-minds-debug` — root-cause-first debugging with falsifiable hypotheses.
-- `employ-minds-execute` — small verified increments and scope control.
-- `employ-minds-review` — specification compliance before code quality.
-- `employ-minds-security` — security/destructive-change gate.
-- `employ-minds-verify` — completion claims require fresh observable evidence.
-- `employ-minds-parallel` — parallelize only independent tasks with explicit contracts.
-- `employ-minds-research` — current/unfamiliar external behavior from primary sources.
-- `employ-minds-context` — context-budget control and evidence ledger for long tasks.
-- `employ-minds-release` — clean final diff, release notes and ship/no-ship gate.
-
-## The invariant
-
-> **No completion claim outruns its evidence.**
-
-A green build does not prove runtime behavior. An unrelated test suite does not prove an acceptance criterion. A reviewer saying “looks good” does not prove a migration is reversible. Employ-Minds requires evidence that matches the claim being made.
-
-## Development
+## Evals, not vibes
 
 ```bash
 python -m unittest discover -s tests -v
 python scripts/doctor.py --self-check
-python -m compileall -q scripts tests
+python scripts/eval_policy.py
+python scripts/score_runs.py evals/example-results.jsonl
 ```
 
-On Bash-capable systems:
+CI proves the harness installs and preserves project content. It does **not** prove Employ-Minds outperforms another coding workflow. `evals/` defines the A/B result format so real task corpora can compare solved rate, false completion, regressions, critical misses, reviewer catches, tokens and latency without hiding tradeoffs behind a magic score.
 
-```bash
-bash -n scripts/install.sh scripts/uninstall.sh
-```
+## Design principles
 
-CI runs the validation suite across Linux, Windows, and macOS.
+See [`docs/DESIGN_PRINCIPLES.md`](docs/DESIGN_PRINCIPLES.md). The short version: progressive disclosure, strong cognition only where scarce, writer/judge separation, evidence over confidence, risk-proportional ceremony, stop unproductive loops, and delete any component that cannot justify its cost.
 
-## Architecture and docs
+## Provenance
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — internal model and gate ordering.
-- [`docs/WORKFLOWS.md`](docs/WORKFLOWS.md) — concrete FAST/STANDARD/CRITICAL examples.
-- [`docs/QUICKSTART.md`](docs/QUICKSTART.md) — shortest path to adoption.
-- [`docs/UPSTREAM.md`](docs/UPSTREAM.md) — upstream provenance and synthesis boundaries.
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution contract.
-- [`SECURITY.md`](SECURITY.md) — responsible disclosure and security scope.
+Employ-Minds is independently designed and maintained with AI assistance. It synthesizes and extends software-engineering patterns found across public agent systems. Two initial MIT-licensed inspirations are tracked explicitly: **Everything Claude Code (ECC)** and **Superpowers**. Their license notices are preserved under `third_party/`, and the initial reference revisions are pinned in `UPSTREAMS.lock.json`.
 
-## Upstream inspiration and license
+General methods such as TDD, root-cause debugging, subagents and code review are not claimed as proprietary. See [`NOTICE.md`](NOTICE.md) and [`docs/UPSTREAM.md`](docs/UPSTREAM.md).
 
-Employ-Minds is independently authored and MIT licensed. It synthesizes architectural/process ideas from two MIT-licensed projects:
-
-- **Everything Claude Code (ECC)** — `affaan-m/ECC`
-- **Superpowers** — `obra/superpowers`
-
-Exact upstream revisions used for the initial synthesis are pinned in [`UPSTREAMS.lock.json`](UPSTREAMS.lock.json), with preserved license notices under [`third_party/`](third_party/). Employ-Minds is not affiliated with or endorsed by either upstream project.
+MIT licensed.
