@@ -12,11 +12,25 @@ AGENTS = ["scout", "architect", "researcher", "debugger", "implementer", "spec-r
 READ_ONLY_AGENTS = set(AGENTS) - {"implementer"}
 
 
+def expected_skills() -> list[str]:
+    return [f"employ-minds-{name}" for name in SKILLS]
+
+
+def expected_claude_agents() -> list[str]:
+    return [f"em-{name}.md" for name in AGENTS]
+
+
+def expected_codex_agents() -> list[str]:
+    return [f"em-{name}.toml" for name in AGENTS]
+
+
 def check_project(project: Path, target: str) -> list[str]:
     errors: list[str] = []
     payload = project / ".employ-minds"
     for rel in ("VERSION", "config/employ-minds-policy.json", "config/prompt-budget.json", "rules/core.md", "agents/manifest.json", "install-state.json"):
-        if not (payload / rel).exists(): errors.append(f"missing .employ-minds/{rel}")
+        if not (payload / rel).exists():
+            errors.append(f"missing .employ-minds/{rel}")
+
     policy_path = payload / "config/employ-minds-policy.json"
     if policy_path.exists():
         try:
@@ -27,28 +41,55 @@ def check_project(project: Path, target: str) -> list[str]:
         except Exception as exc:
             errors.append(f"invalid policy JSON: {exc}")
 
+    state = {}
+    state_path = payload / "install-state.json"
+    if state_path.exists():
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            if state.get("name") != "employ-minds": errors.append("install-state owner mismatch")
+            if not state.get("native_agents"): errors.append("install-state native_agents missing/false")
+        except Exception as exc:
+            errors.append(f"invalid install-state JSON: {exc}")
+
     configs = (
-        ("claude", target in ("claude", "both"), "CLAUDE.md", project / ".claude" / "skills"),
-        ("codex", target in ("codex", "both"), "AGENTS.md", project / ".agents" / "skills"),
+        ("claude", target in ("claude", "both"), "CLAUDE.md", project / ".claude/skills"),
+        ("codex", target in ("codex", "both"), "AGENTS.md", project / ".agents/skills"),
     )
     for kind, enabled, instruction, skill_base in configs:
-        if not enabled: continue
+        if not enabled:
+            continue
         f = project / instruction
         text = f.read_text(encoding="utf-8") if f.exists() else ""
-        if BEGIN not in text or END not in text: errors.append(f"{instruction} managed block missing")
+        if BEGIN not in text or END not in text:
+            errors.append(f"{instruction} managed block missing")
         for suffix in SKILLS:
-            if not (skill_base / f"employ-minds-{suffix}" / "SKILL.md").exists(): errors.append(f"{kind}: missing skill employ-minds-{suffix}")
+            if not (skill_base / f"employ-minds-{suffix}/SKILL.md").exists():
+                errors.append(f"{kind}: missing skill employ-minds-{suffix}")
+
         if kind == "claude":
-            if not (project / ".claude/commands/employ-minds.md").exists(): errors.append("claude: missing /employ-minds command")
+            if not (project / ".claude/commands/employ-minds.md").exists():
+                errors.append("claude: missing /employ-minds command")
+            if sorted(state.get("claude_skills", [])) != sorted(expected_skills()):
+                errors.append("claude: install-state skill ownership mismatch")
+            if sorted(state.get("claude_agents", [])) != sorted(expected_claude_agents()):
+                errors.append("claude: install-state agent ownership mismatch")
+            if state.get("claude_command") != "employ-minds.md":
+                errors.append("claude: install-state command ownership mismatch")
             for name in AGENTS:
                 path = project / ".claude/agents" / f"em-{name}.md"
-                if not path.exists(): errors.append(f"claude: missing native agent em-{name}")
+                if not path.exists():
+                    errors.append(f"claude: missing native agent em-{name}")
                 elif name in READ_ONLY_AGENTS and "permissionMode: plan" not in path.read_text(encoding="utf-8"):
                     errors.append(f"claude: read-only agent em-{name} lacks plan permission mode")
         else:
+            if sorted(state.get("codex_skills", [])) != sorted(expected_skills()):
+                errors.append("codex: install-state skill ownership mismatch")
+            if sorted(state.get("codex_agents", [])) != sorted(expected_codex_agents()):
+                errors.append("codex: install-state agent ownership mismatch")
             for name in AGENTS:
                 path = project / ".codex/agents" / f"em-{name}.toml"
-                if not path.exists(): errors.append(f"codex: missing native agent em-{name}")
+                if not path.exists():
+                    errors.append(f"codex: missing native agent em-{name}")
                 elif name in READ_ONLY_AGENTS and 'sandbox_mode = "read-only"' not in path.read_text(encoding="utf-8"):
                     errors.append(f"codex: read-only agent em-{name} lacks read-only sandbox")
     return errors
@@ -75,7 +116,7 @@ def self_check(root: Path) -> list[str]:
         errors.append(f"agent manifest: {exc}")
 
     for suffix in SKILLS:
-        path = root / "skills" / f"employ-minds-{suffix}" / "SKILL.md"
+        path = root / "skills" / f"employ-minds-{suffix}/SKILL.md"
         if not path.exists(): errors.append(f"missing source skill employ-minds-{suffix}")
         elif f"name: employ-minds-{suffix}" not in path.read_text(encoding="utf-8"): errors.append(f"skill frontmatter mismatch: employ-minds-{suffix}")
 
@@ -99,8 +140,8 @@ def self_check(root: Path) -> list[str]:
         "agents/manifest.json", "config/prompt-budget.json", "scripts/install.py", "scripts/doctor.py",
         "scripts/render_agents.py", "scripts/prompt_budget.py", "scripts/eval_policy.py", "scripts/score_runs.py",
         "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "docs/UPSTREAM.md", "commands/employ-minds.md",
-        "evals/README.md", "evals/router-cases.json", "evals/run-result.schema.json", "research/PATTERN_ATLAS.md",
-        ".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
+        "evals/README.md", "evals/BENCHMARK_PLAN.md", "evals/router-cases.json", "evals/run-result.schema.json",
+        "research/PATTERN_ATLAS.md", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
     )
     for rel in required_files:
         if not (root / rel).exists(): errors.append(f"missing {rel}")
