@@ -87,14 +87,16 @@ class EmployMindsTests(unittest.TestCase):
             self.assertEqual(agent.read_text(), "mine\n")
             self.assertEqual(codex_agent.read_text(), "mine\n")
 
-    def test_readonly_native_roles_are_marked_readonly_in_codex(self):
-        writers = {"implementer"}
+    def test_native_role_capabilities_are_separated(self):
         for name in doctor.AGENTS:
-            text = (ROOT / f"native/codex/agents/em-{name}.toml").read_text()
-            if name in writers:
-                self.assertIn('sandbox_mode = "workspace-write"', text)
+            codex = (ROOT / f"native/codex/agents/em-{name}.toml").read_text()
+            claude = (ROOT / f"native/claude/agents/em-{name}.md").read_text()
+            if name == "implementer":
+                self.assertIn('sandbox_mode = "workspace-write"', codex)
+                self.assertNotIn("permissionMode: plan", claude)
             else:
-                self.assertIn('sandbox_mode = "read-only"', text)
+                self.assertIn('sandbox_mode = "read-only"', codex)
+                self.assertIn("permissionMode: plan", claude)
 
 if __name__ == "__main__":
     unittest.main()
