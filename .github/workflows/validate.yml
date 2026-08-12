@@ -1,0 +1,32 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / py${{ matrix.python }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ['3.9', '3.13']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Unit and integration tests
+        run: python -m unittest discover -s tests -v
+      - name: Repository doctor
+        run: python scripts/doctor.py --self-check
+      - name: Compile Python
+        run: python -m compileall -q scripts tests
+      - name: Validate shell wrappers
+        if: runner.os != 'Windows'
+        run: bash -n scripts/install.sh scripts/uninstall.sh

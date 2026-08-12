@@ -1,0 +1,16 @@
+{
+  "name": "employ-minds",
+  "version": "1.0.0",
+  "description": "Employ-Minds project metadata. Codex integration is installed through AGENTS.md and .agents/skills.",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "agents",
+    "engineering",
+    "tdd",
+    "debugging",
+    "code-review",
+    "security",
+    "verification"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "employ-minds",
+  "version": "1.0.0",
+  "description": "Risk-adaptive engineering harness: one router, specialist minds, TDD/debug/review/security/verification gates.",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "agents",
+    "engineering",
+    "tdd",
+    "debugging",
+    "code-review",
+    "security",
+    "verification"
+  ]
+}
