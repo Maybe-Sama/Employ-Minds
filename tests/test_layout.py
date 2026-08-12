@@ -36,19 +36,19 @@ class EmployMindsTests(unittest.TestCase):
         self.assertEqual(twice.count(install.BEGIN), 1)
         self.assertIn("Do not touch this.", install.remove_block(twice))
 
-    def test_install_both_registers_native_agents_and_ownership(self):
+    def test_install_both_registers_exact_ownership(self):
         with tempfile.TemporaryDirectory() as td:
             project = Path(td)
             (project / "CLAUDE.md").write_text("# Mine\n", encoding="utf-8")
             (project / "AGENTS.md").write_text("# Also mine\n", encoding="utf-8")
             install.copy_payload(ROOT, project, "both")
             self.assertEqual(doctor.check_project(project, "both"), [])
-            self.assertTrue((project / ".claude/agents/em-verifier.md").exists())
-            self.assertTrue((project / ".codex/agents/em-verifier.toml").exists())
             state = json.loads((project / ".employ-minds/install-state.json").read_text())
-            self.assertTrue(state["native_agents"])
             self.assertIn("em-verifier.md", state["claude_agents"])
             self.assertIn("em-verifier.toml", state["codex_agents"])
+            self.assertIn("employ-minds-router", state["claude_skills"])
+            self.assertIn("employ-minds-router", state["codex_skills"])
+            self.assertEqual(state["claude_command"], "employ-minds.md")
 
     def test_reinstall_is_idempotent(self):
         with tempfile.TemporaryDirectory() as td:
@@ -74,12 +74,9 @@ class EmployMindsTests(unittest.TestCase):
             install.uninstall(project, "codex")
             self.assertFalse((project / ".employ-minds").exists())
 
-    def test_unrelated_skills_and_agents_survive_even_if_agent_uses_em_prefix(self):
+    def test_unrelated_em_prefix_agents_survive_install_and_uninstall(self):
         with tempfile.TemporaryDirectory() as td:
             project = Path(td)
-            skill = project / ".claude/skills/my-own-skill"
-            skill.mkdir(parents=True)
-            (skill / "SKILL.md").write_text("mine\n")
             claude_agent = project / ".claude/agents/em-personal.md"
             claude_agent.parent.mkdir(parents=True, exist_ok=True)
             claude_agent.write_text("mine\n")
@@ -87,15 +84,45 @@ class EmployMindsTests(unittest.TestCase):
             codex_agent.parent.mkdir(parents=True, exist_ok=True)
             codex_agent.write_text("mine\n")
             install.copy_payload(ROOT, project, "both")
-            self.assertEqual(claude_agent.read_text(), "mine\n")
-            self.assertEqual(codex_agent.read_text(), "mine\n")
             install.copy_payload(ROOT, project, "both")
-            self.assertEqual(claude_agent.read_text(), "mine\n")
-            self.assertEqual(codex_agent.read_text(), "mine\n")
             install.uninstall(project, "both")
-            self.assertTrue(skill.exists())
             self.assertEqual(claude_agent.read_text(), "mine\n")
             self.assertEqual(codex_agent.read_text(), "mine\n")
+
+    def test_first_install_refuses_exact_agent_collision_without_mutation(self):
+        with tempfile.TemporaryDirectory() as td:
+            project = Path(td)
+            collision = project / ".claude/agents/em-verifier.md"
+            collision.parent.mkdir(parents=True)
+            collision.write_text("user-owned\n")
+            with self.assertRaises(RuntimeError):
+                install.copy_payload(ROOT, project, "claude")
+            self.assertEqual(collision.read_text(), "user-owned\n")
+            self.assertFalse((project / ".employ-minds").exists())
+            self.assertFalse((project / "CLAUDE.md").exists())
+
+    def test_first_install_refuses_exact_skill_collision_without_mutation(self):
+        with tempfile.TemporaryDirectory() as td:
+            project = Path(td)
+            collision = project / ".agents/skills/employ-minds-router"
+            collision.mkdir(parents=True)
+            (collision / "SKILL.md").write_text("user-owned\n")
+            with self.assertRaises(RuntimeError):
+                install.copy_payload(ROOT, project, "codex")
+            self.assertEqual((collision / "SKILL.md").read_text(), "user-owned\n")
+            self.assertFalse((project / ".employ-minds").exists())
+            self.assertFalse((project / "AGENTS.md").exists())
+
+    def test_first_install_refuses_command_collision_without_mutation(self):
+        with tempfile.TemporaryDirectory() as td:
+            project = Path(td)
+            command = project / ".claude/commands/employ-minds.md"
+            command.parent.mkdir(parents=True)
+            command.write_text("user-owned\n")
+            with self.assertRaises(RuntimeError):
+                install.copy_payload(ROOT, project, "claude")
+            self.assertEqual(command.read_text(), "user-owned\n")
+            self.assertFalse((project / ".employ-minds").exists())
 
     def test_native_role_capabilities_are_separated(self):
         for name in doctor.AGENTS:
