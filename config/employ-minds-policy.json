@@ -1,40 +1,21 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "name": "employ-minds",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "default_profile": "standard",
+  "native_agent_separation": true,
+  "completion_requires_fresh_evidence": true,
+  "parallelism_requires_independence": true,
+  "max_ordinary_parallel_minds": 3,
+  "information_contract": ["objective", "known_facts", "constraints", "output_contract"],
   "profiles": {
-    "fast": {
-      "description": "Small, local, low-risk change with clear requirements and bounded blast radius.",
-      "plan": "mental_or_micro",
-      "tdd": "focused_regression_when_behavior_changes",
-      "review": ["self_diff_review"],
-      "security_gate": "on_trigger",
-      "verification": "focused_fresh"
-    },
-    "standard": {
-      "description": "Normal feature, bug fix, integration, or bounded refactor.",
-      "plan": "written_short",
-      "tdd": "default_for_observable_behavior",
-      "review": ["spec_compliance", "code_quality"],
-      "security_gate": "on_trigger",
-      "verification": "focused_plus_relevant_suite"
-    },
-    "critical": {
-      "description": "High-risk, destructive, security-sensitive, money/data-impacting, or wide-scope work.",
-      "plan": "written_explicit_with_rollback",
-      "tdd": "required_unless_impractical_with_recorded_equivalent_evidence",
-      "review": ["independent_spec_compliance", "independent_code_quality", "security"],
-      "security_gate": "required",
-      "verification": "full_relevant_suite_plus_claim_evidence"
-    }
+    "fast": {"native_reviewers": [], "verification": "focused_fresh", "ceremony": "minimum"},
+    "standard": {"native_reviewers": ["spec-reviewer", "quality-reviewer", "verifier"], "security": "on_trigger", "verification": "claim_mapped"},
+    "critical": {"native_reviewers": ["spec-reviewer", "quality-reviewer", "security-reviewer", "verifier"], "security": "required", "verification": "claim_mapped_strong", "isolation": "preferred"}
   },
   "critical_triggers": ["authentication", "authorization", "permissions", "payments", "billing", "money movement", "database migration", "schema migration", "secrets", "cryptography", "production data", "destructive operation", "data deletion", "security boundary", "dependency supply chain", "large refactor", "incident response"],
   "uncertainty_upgrade_triggers": ["unfamiliar API", "recent API behavior", "ambiguous material requirement", "cannot reproduce bug", "failing test with unknown cause", "multiple plausible root causes", "hidden dependency", "scope expansion"],
   "review_order": ["spec_compliance", "code_quality", "security_if_triggered", "verification"],
-  "completion_requires_fresh_evidence": true,
-  "parallelism_requires_independence": true,
-  "reviewer_independence_preferred_for_critical": true,
-  "never_claim_success_from_stale_output": true,
+  "token_economy": {"diff_first_review": true, "read_on_demand": true, "no_duplicate_agents_without_reason": true, "primary_context_for_decisions_and_evidence": true},
   "stop_conditions": ["unresolved_acceptance_criterion", "unexplained_test_failure", "unresolved_critical_security_finding", "unverified_destructive_or_migration_safety", "completion_claim_without_matching_evidence"]
 }

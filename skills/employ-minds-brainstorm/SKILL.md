@@ -1,16 +1,18 @@
 ---
 name: employ-minds-brainstorm
-description: Resolve meaningful design ambiguity without turning straightforward tasks into design theater.
+description: Contrastive design exploration for genuine ambiguity; generate useful novelty without brainstorming sprawl.
 ---
 # Employ-Minds Brainstorm
 
-Use only when there are multiple materially different valid designs or when requirements contain unresolved tradeoffs.
+Use only when there is a material design choice.
 
-1. State the decision to make and the invariant that must survive it.
-2. Identify repository constraints before proposing architecture.
-3. Generate 2–4 meaningfully different options, not cosmetic variants.
-4. Compare correctness risk, complexity, reversibility, operability, testability, and migration cost where relevant.
-5. Choose one direction and record why the rejected options lost.
-6. Convert the decision into acceptance criteria for `employ-minds-plan`.
+1. State the decision and the constraints that actually matter.
+2. Produce at most three **meaningfully different** approaches:
+   - boring baseline: simplest conventional solution;
+   - leverage option: exploit an existing primitive or architecture more deeply;
+   - constraint inversion: challenge one assumption only if doing so can simplify or improve the design.
+3. For each, identify the strongest advantage, fatal risk, reversibility, and verification difficulty.
+4. Eliminate dominated options quickly.
+5. Choose or synthesize one approach. Novelty is valuable only when it improves the objective under constraints.
 
-Do not invoke brainstorming for a clear mechanical edit. Design ceremony is a cost and should buy risk reduction.
+Do not produce long idea lists, cosmetic variations, or novelty for its own sake.
