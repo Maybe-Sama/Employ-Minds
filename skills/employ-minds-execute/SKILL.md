@@ -1,18 +1,19 @@
 ---
 name: employ-minds-execute
-description: Implement bounded plan slices in small verified increments while controlling scope drift.
+description: Implement bounded slices with evidence-driven cadence, minimal scope, and explicit re-routing when assumptions break.
 ---
 # Employ-Minds Execute
 
-Implement the accepted plan one coherent slice at a time.
+Work one coherent slice at a time. Reference the relevant acceptance-criterion ID; do not copy its prose back into context.
 
-For each slice:
-1. restate the local acceptance criterion;
-2. inspect the exact code path before editing;
-3. apply the smallest architecture-consistent change;
-4. run the narrow evidence check immediately;
-5. record files changed and any new assumption.
+For a slice:
+1. inspect the exact path/boundary needed for the next edit;
+2. make the smallest architecture-consistent change;
+3. run the narrowest check that can falsify that slice;
+4. retain only new evidence, changed files, and new assumptions in the ledger.
 
-Do not silently broaden scope. If a required change crosses a new subsystem, changes a public contract, touches production data/security, or invalidates the plan, return to the router and reclassify/re-plan.
+Run expensive broad suites at meaningful integration points and final verification rather than after every trivial edit. Do not postpone a cheap focused regression test that gives immediate signal.
 
-Leave refactoring that is not necessary for correctness out of the task unless the plan explicitly includes it.
+Do not silently widen scope. A new subsystem/public contract, production data/security trigger, hidden dependency, or invalidated assumption returns control to the router for reclassification/re-planning.
+
+If two consecutive execution cycles add no new evidence, stop changing code and revisit the hypothesis or design. Leave unrelated cleanup/refactoring outside the task unless it is required for correctness or explicitly accepted.

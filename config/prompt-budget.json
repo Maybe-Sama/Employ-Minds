@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "metric": "whitespace_words_proxy",
+  "limits": {
+    "core_words": 450,
+    "router_words": 450,
+    "single_skill_words": 450,
+    "all_skills_words": 5000,
+    "single_agent_instruction_words": 180,
+    "all_agent_contract_words": 1800
+  }
+}

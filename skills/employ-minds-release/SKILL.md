@@ -1,15 +1,18 @@
 ---
 name: employ-minds-release
-description: Final ship/no-ship discipline for diffs, release notes, migrations, CI, and unresolved risk.
+description: Final ship/no-ship gate plus concise, natural handoff after STANDARD/CRITICAL changes.
 ---
 # Employ-Minds Release
 
-Use before shipping a STANDARD or CRITICAL change when the task includes a PR, release, merge, deployment, migration, or handoff.
+Use when the task includes a PR, merge, release, deployment, migration, or explicit handoff.
 
-1. Inspect the final diff for accidental files, debug output, secrets and unrelated cleanup.
-2. Confirm acceptance criteria map to implementation and tests/evidence.
-3. Confirm all profile-required reviews are resolved.
-4. Run the final verification set after the last relevant change.
-5. For migrations/data changes, confirm forward/rollback procedure and compatibility window.
-6. Produce concise release notes: behavior changed, operational action required, known limitations, rollback signal.
-7. Return **SHIP** only when no required gate is unresolved; otherwise return **NO-SHIP** with blockers.
+Before SHIP:
+1. inspect the final diff/status for accidental files, debug output, secrets, generated noise, and unrelated cleanup;
+2. ensure accepted behavior has implementation plus matching evidence;
+3. ensure profile-required reviews are resolved against the latest diff;
+4. run final claim-mapped verification after the last relevant change;
+5. for data/migrations, confirm forward path, rollback/recovery, compatibility window, and the signal that should trigger rollback.
+
+**Internal result:** SHIP or NO-SHIP with blockers. Keep that structure inside the workflow.
+
+**User-facing handoff:** sound like a competent teammate, not a process engine. Usually state what materially changed, the most relevant verification performed, and any caveat/action the user needs. Do not dump every gate, agent handoff, command, or checklist unless the task, risk, or user asks for that detail.

@@ -15,7 +15,7 @@ READ_ONLY_AGENTS = set(AGENTS) - {"implementer"}
 def check_project(project: Path, target: str) -> list[str]:
     errors: list[str] = []
     payload = project / ".employ-minds"
-    for rel in ("VERSION", "config/employ-minds-policy.json", "rules/core.md", "agents/manifest.json", "install-state.json"):
+    for rel in ("VERSION", "config/employ-minds-policy.json", "config/prompt-budget.json", "rules/core.md", "agents/manifest.json", "install-state.json"):
         if not (payload / rel).exists(): errors.append(f"missing .employ-minds/{rel}")
     policy_path = payload / "config/employ-minds-policy.json"
     if policy_path.exists():
@@ -41,13 +41,13 @@ def check_project(project: Path, target: str) -> list[str]:
         if kind == "claude":
             if not (project / ".claude/commands/employ-minds.md").exists(): errors.append("claude: missing /employ-minds command")
             for name in AGENTS:
-                path = project / ".claude" / "agents" / f"em-{name}.md"
+                path = project / ".claude/agents" / f"em-{name}.md"
                 if not path.exists(): errors.append(f"claude: missing native agent em-{name}")
                 elif name in READ_ONLY_AGENTS and "permissionMode: plan" not in path.read_text(encoding="utf-8"):
                     errors.append(f"claude: read-only agent em-{name} lacks plan permission mode")
         else:
             for name in AGENTS:
-                path = project / ".codex" / "agents" / f"em-{name}.toml"
+                path = project / ".codex/agents" / f"em-{name}.toml"
                 if not path.exists(): errors.append(f"codex: missing native agent em-{name}")
                 elif name in READ_ONLY_AGENTS and 'sandbox_mode = "read-only"' not in path.read_text(encoding="utf-8"):
                     errors.append(f"codex: read-only agent em-{name} lacks read-only sandbox")
@@ -70,8 +70,7 @@ def self_check(root: Path) -> list[str]:
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if manifest.get("schema_version") != 1: errors.append("agent manifest schema_version must be 1")
-        names = list(manifest.get("agents", {}))
-        if names != AGENTS: errors.append("agent manifest names/order do not match doctor contract")
+        if list(manifest.get("agents", {})) != AGENTS: errors.append("agent manifest names/order do not match doctor contract")
     except Exception as exc:
         errors.append(f"agent manifest: {exc}")
 
@@ -97,10 +96,11 @@ def self_check(root: Path) -> list[str]:
 
     required_files = (
         "LICENSE", "NOTICE.md", "VERSION", "README.md", "CHANGELOG.md", "UPSTREAMS.lock.json",
-        "agents/manifest.json", "scripts/install.py", "scripts/doctor.py", "scripts/render_agents.py",
-        "scripts/eval_policy.py", "scripts/score_runs.py", "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md",
-        "docs/UPSTREAM.md", "commands/employ-minds.md", "evals/README.md", "evals/router-cases.json",
-        "evals/run-result.schema.json", "research/PATTERN_ATLAS.md", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
+        "agents/manifest.json", "config/prompt-budget.json", "scripts/install.py", "scripts/doctor.py",
+        "scripts/render_agents.py", "scripts/prompt_budget.py", "scripts/eval_policy.py", "scripts/score_runs.py",
+        "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "docs/UPSTREAM.md", "commands/employ-minds.md",
+        "evals/README.md", "evals/router-cases.json", "evals/run-result.schema.json", "research/PATTERN_ATLAS.md",
+        ".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
     )
     for rel in required_files:
         if not (root / rel).exists(): errors.append(f"missing {rel}")

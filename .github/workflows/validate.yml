@@ -27,6 +27,8 @@ jobs:
         run: python scripts/doctor.py --self-check
       - name: Native agent parity
         run: python scripts/render_agents.py --check
+      - name: Prompt budget
+        run: python scripts/prompt_budget.py
       - name: Router conformance corpus
         run: python scripts/eval_policy.py
       - name: Eval result format smoke test
