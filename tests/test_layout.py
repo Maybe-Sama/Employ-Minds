@@ -36,7 +36,7 @@ class EmployMindsTests(unittest.TestCase):
         self.assertEqual(twice.count(install.BEGIN), 1)
         self.assertIn("Do not touch this.", install.remove_block(twice))
 
-    def test_install_both_registers_native_agents(self):
+    def test_install_both_registers_native_agents_and_ownership(self):
         with tempfile.TemporaryDirectory() as td:
             project = Path(td)
             (project / "CLAUDE.md").write_text("# Mine\n", encoding="utf-8")
@@ -47,6 +47,8 @@ class EmployMindsTests(unittest.TestCase):
             self.assertTrue((project / ".codex/agents/em-verifier.toml").exists())
             state = json.loads((project / ".employ-minds/install-state.json").read_text())
             self.assertTrue(state["native_agents"])
+            self.assertIn("em-verifier.md", state["claude_agents"])
+            self.assertIn("em-verifier.toml", state["codex_agents"])
 
     def test_reinstall_is_idempotent(self):
         with tempfile.TemporaryDirectory() as td:
@@ -66,25 +68,33 @@ class EmployMindsTests(unittest.TestCase):
             self.assertFalse((project / ".claude/agents/em-verifier.md").exists())
             self.assertTrue((project / ".codex/agents/em-verifier.toml").exists())
             self.assertEqual(doctor.check_project(project, "codex"), [])
+            state = json.loads((project / ".employ-minds/install-state.json").read_text())
+            self.assertEqual(state["claude_agents"], [])
+            self.assertIn("em-verifier.toml", state["codex_agents"])
             install.uninstall(project, "codex")
             self.assertFalse((project / ".employ-minds").exists())
 
-    def test_unrelated_skills_and_agents_survive(self):
+    def test_unrelated_skills_and_agents_survive_even_if_agent_uses_em_prefix(self):
         with tempfile.TemporaryDirectory() as td:
             project = Path(td)
             skill = project / ".claude/skills/my-own-skill"
             skill.mkdir(parents=True)
             (skill / "SKILL.md").write_text("mine\n")
-            agent = project / ".claude/agents/my-agent.md"
-            agent.parent.mkdir(parents=True, exist_ok=True)
-            agent.write_text("mine\n")
-            codex_agent = project / ".codex/agents/my-agent.toml"
+            claude_agent = project / ".claude/agents/em-personal.md"
+            claude_agent.parent.mkdir(parents=True, exist_ok=True)
+            claude_agent.write_text("mine\n")
+            codex_agent = project / ".codex/agents/em-personal.toml"
             codex_agent.parent.mkdir(parents=True, exist_ok=True)
             codex_agent.write_text("mine\n")
             install.copy_payload(ROOT, project, "both")
+            self.assertEqual(claude_agent.read_text(), "mine\n")
+            self.assertEqual(codex_agent.read_text(), "mine\n")
+            install.copy_payload(ROOT, project, "both")
+            self.assertEqual(claude_agent.read_text(), "mine\n")
+            self.assertEqual(codex_agent.read_text(), "mine\n")
             install.uninstall(project, "both")
             self.assertTrue(skill.exists())
-            self.assertEqual(agent.read_text(), "mine\n")
+            self.assertEqual(claude_agent.read_text(), "mine\n")
             self.assertEqual(codex_agent.read_text(), "mine\n")
 
     def test_native_role_capabilities_are_separated(self):

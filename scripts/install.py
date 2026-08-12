@@ -9,7 +9,6 @@ from pathlib import Path
 BEGIN = "<!-- EMPLOY-MINDS:BEGIN -->"
 END = "<!-- EMPLOY-MINDS:END -->"
 SKILL_PREFIX = "employ-minds-"
-AGENT_PREFIX = "em-"
 
 CLAUDE_BLOCK = f"""{BEGIN}
 ## Employ-Minds
@@ -65,12 +64,10 @@ def replace_tree(src: Path, dst: Path) -> None:
 
 
 def install_namespaced(src: Path, dst: Path, prefix: str) -> None:
+    """Own an intentionally unique namespace (used for employ-minds-* skills)."""
     dst.mkdir(parents=True, exist_ok=True)
     for old in dst.glob(f"{prefix}*"):
-        if old.is_dir():
-            shutil.rmtree(old)
-        else:
-            old.unlink()
+        shutil.rmtree(old) if old.is_dir() else old.unlink()
     for item in sorted(src.iterdir()):
         if not item.name.startswith(prefix):
             continue
@@ -85,24 +82,74 @@ def remove_namespaced(dst: Path, prefix: str) -> None:
         shutil.rmtree(item) if item.is_dir() else item.unlink()
 
 
+def read_state(payload: Path) -> dict:
+    path = payload / "install-state.json"
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) and data.get("name") == "employ-minds" else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def source_file_names(src: Path) -> list[str]:
+    return sorted(p.name for p in src.iterdir() if p.is_file())
+
+
+def install_owned_files(src: Path, dst: Path, previous: list[str] | None = None) -> list[str]:
+    """Install exact files and remove only files explicitly owned by a previous install."""
+    dst.mkdir(parents=True, exist_ok=True)
+    for name in previous or []:
+        old = dst / Path(name).name
+        if old.is_file() or old.is_symlink():
+            old.unlink()
+    names = source_file_names(src)
+    for name in names:
+        shutil.copy2(src / name, dst / name)
+    return names
+
+
+def remove_owned_files(dst: Path, names: list[str] | None) -> None:
+    if not dst.exists():
+        return
+    for name in names or []:
+        path = dst / Path(name).name
+        if path.is_file() or path.is_symlink():
+            path.unlink()
+
+
 def copy_payload(src: Path, project: Path, target: str) -> None:
     payload = project / ".employ-minds"
+    previous_state = read_state(payload)
     payload.mkdir(parents=True, exist_ok=True)
+
     for rel in ("config", "agents", "rules"):
         replace_tree(src / rel, payload / rel)
     for filename in ("VERSION", "NOTICE.md", "LICENSE"):
         shutil.copy2(src / filename, payload / filename)
 
+    claude_agents = list(previous_state.get("claude_agents", []))
+    codex_agents = list(previous_state.get("codex_agents", []))
+
     if target in ("claude", "both"):
         install_namespaced(src / "skills", project / ".claude" / "skills", SKILL_PREFIX)
-        install_namespaced(src / "native" / "claude" / "agents", project / ".claude" / "agents", AGENT_PREFIX)
+        claude_agents = install_owned_files(
+            src / "native" / "claude" / "agents",
+            project / ".claude" / "agents",
+            claude_agents,
+        )
         commands = project / ".claude" / "commands"
         commands.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src / "commands" / "employ-minds.md", commands / "employ-minds.md")
 
     if target in ("codex", "both"):
         install_namespaced(src / "skills", project / ".agents" / "skills", SKILL_PREFIX)
-        install_namespaced(src / "native" / "codex" / "agents", project / ".codex" / "agents", AGENT_PREFIX)
+        codex_agents = install_owned_files(
+            src / "native" / "codex" / "agents",
+            project / ".codex" / "agents",
+            codex_agents,
+        )
 
     backups = payload / "backups"
     if target in ("claude", "both"):
@@ -115,33 +162,41 @@ def copy_payload(src: Path, project: Path, target: str) -> None:
         "version": (src / "VERSION").read_text(encoding="utf-8").strip(),
         "last_install_target": target,
         "native_agents": True,
+        "claude_agents": claude_agents,
+        "codex_agents": codex_agents,
     }
     (payload / "install-state.json").write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
 
 
 def uninstall(project: Path, target: str) -> None:
+    payload = project / ".employ-minds"
+    state = read_state(payload)
+
     if target in ("claude", "both"):
         f = project / "CLAUDE.md"
         if f.exists():
             f.write_text(remove_block(f.read_text(encoding="utf-8")), encoding="utf-8")
         remove_namespaced(project / ".claude" / "skills", SKILL_PREFIX)
-        remove_namespaced(project / ".claude" / "agents", AGENT_PREFIX)
+        remove_owned_files(project / ".claude" / "agents", state.get("claude_agents", []))
         command = project / ".claude" / "commands" / "employ-minds.md"
         if command.exists():
             command.unlink()
+        state["claude_agents"] = []
 
     if target in ("codex", "both"):
         f = project / "AGENTS.md"
         if f.exists():
             f.write_text(remove_block(f.read_text(encoding="utf-8")), encoding="utf-8")
         remove_namespaced(project / ".agents" / "skills", SKILL_PREFIX)
-        remove_namespaced(project / ".codex" / "agents", AGENT_PREFIX)
+        remove_owned_files(project / ".codex" / "agents", state.get("codex_agents", []))
+        state["codex_agents"] = []
 
-    payload = project / ".employ-minds"
     claude_active = (project / "CLAUDE.md").exists() and BEGIN in (project / "CLAUDE.md").read_text(encoding="utf-8")
     codex_active = (project / "AGENTS.md").exists() and BEGIN in (project / "AGENTS.md").read_text(encoding="utf-8")
     if payload.exists() and not claude_active and not codex_active:
         shutil.rmtree(payload)
+    elif payload.exists():
+        (payload / "install-state.json").write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
 
 
 def main() -> int:
