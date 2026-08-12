@@ -1,7 +1,13 @@
 {
-  "schema_version": 1,
-  "metric": "whitespace_words_proxy",
+  "schema_version": 2,
+  "metrics": {
+    "word_counts": "stable cross-model proxy for canonical instruction size",
+    "startup_description_chars": "always-discoverable metadata footprint proxy; not tokenizer-exact"
+  },
   "limits": {
+    "managed_instruction_words": 90,
+    "skill_description_chars": 2600,
+    "agent_description_chars": 2200,
     "core_words": 450,
     "router_words": 450,
     "single_skill_words": 450,
