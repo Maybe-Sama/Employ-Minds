@@ -15,10 +15,9 @@ READ_ONLY_AGENTS = set(AGENTS) - {"implementer"}
 def check_project(project: Path, target: str) -> list[str]:
     errors: list[str] = []
     payload = project / ".employ-minds"
-    for rel in ("VERSION", "config/employ-minds-policy.json", "rules/core.md", "install-state.json"):
-        if not (payload / rel).exists():
-            errors.append(f"missing .employ-minds/{rel}")
-    policy_path = payload / "config" / "employ-minds-policy.json"
+    for rel in ("VERSION", "config/employ-minds-policy.json", "rules/core.md", "agents/manifest.json", "install-state.json"):
+        if not (payload / rel).exists(): errors.append(f"missing .employ-minds/{rel}")
+    policy_path = payload / "config/employ-minds-policy.json"
     if policy_path.exists():
         try:
             policy = json.loads(policy_path.read_text(encoding="utf-8"))
@@ -67,16 +66,23 @@ def self_check(root: Path) -> list[str]:
     except Exception as exc:
         errors.append(f"policy: {exc}")
 
+    manifest_path = root / "agents/manifest.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if manifest.get("schema_version") != 1: errors.append("agent manifest schema_version must be 1")
+        names = list(manifest.get("agents", {}))
+        if names != AGENTS: errors.append("agent manifest names/order do not match doctor contract")
+    except Exception as exc:
+        errors.append(f"agent manifest: {exc}")
+
     for suffix in SKILLS:
         path = root / "skills" / f"employ-minds-{suffix}" / "SKILL.md"
         if not path.exists(): errors.append(f"missing source skill employ-minds-{suffix}")
         elif f"name: employ-minds-{suffix}" not in path.read_text(encoding="utf-8"): errors.append(f"skill frontmatter mismatch: employ-minds-{suffix}")
 
     for name in AGENTS:
-        canonical = root / "agents" / f"{name}.md"
-        claude = root / "native" / "claude" / "agents" / f"em-{name}.md"
-        codex = root / "native" / "codex" / "agents" / f"em-{name}.toml"
-        if not canonical.exists(): errors.append(f"missing canonical agent {name}")
+        claude = root / "native/claude/agents" / f"em-{name}.md"
+        codex = root / "native/codex/agents" / f"em-{name}.toml"
         if not claude.exists(): errors.append(f"missing Claude native agent em-{name}")
         else:
             text = claude.read_text(encoding="utf-8")
@@ -91,10 +97,10 @@ def self_check(root: Path) -> list[str]:
 
     required_files = (
         "LICENSE", "NOTICE.md", "VERSION", "README.md", "CHANGELOG.md", "UPSTREAMS.lock.json",
-        "scripts/install.py", "scripts/doctor.py", "scripts/eval_policy.py", "scripts/score_runs.py",
-        "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "docs/UPSTREAM.md",
-        "commands/employ-minds.md", "evals/README.md", "evals/router-cases.json", "evals/run-result.schema.json",
-        "research/PATTERN_ATLAS.md", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
+        "agents/manifest.json", "scripts/install.py", "scripts/doctor.py", "scripts/render_agents.py",
+        "scripts/eval_policy.py", "scripts/score_runs.py", "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md",
+        "docs/UPSTREAM.md", "commands/employ-minds.md", "evals/README.md", "evals/router-cases.json",
+        "evals/run-result.schema.json", "research/PATTERN_ATLAS.md", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
     )
     for rel in required_files:
         if not (root / rel).exists(): errors.append(f"missing {rel}")
@@ -118,7 +124,6 @@ def main() -> int:
         return 1
     print("Employ-Minds doctor: OK")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

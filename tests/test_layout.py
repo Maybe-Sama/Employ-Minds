@@ -13,17 +13,19 @@ def load(name, path):
     spec.loader.exec_module(mod)
     return mod
 
-install = load("em_install", ROOT / "scripts" / "install.py")
-doctor = load("em_doctor", ROOT / "scripts" / "doctor.py")
+install = load("em_install", ROOT / "scripts/install.py")
+doctor = load("em_doctor", ROOT / "scripts/doctor.py")
+renderer = load("em_renderer", ROOT / "scripts/render_agents.py")
 
 class EmployMindsTests(unittest.TestCase):
-    def test_policy_and_source_layout(self):
+    def test_policy_source_layout_and_generated_agent_parity(self):
         policy = json.loads((ROOT / "config/employ-minds-policy.json").read_text(encoding="utf-8"))
         self.assertEqual(policy["schema_version"], 2)
         self.assertEqual(policy["default_profile"], "standard")
         self.assertTrue(policy["completion_requires_fresh_evidence"])
         self.assertTrue(policy["native_agent_separation"])
         self.assertEqual(doctor.self_check(ROOT), [])
+        self.assertEqual(renderer.check(), [])
 
     def test_managed_block_is_idempotent_and_preserves_user_content(self):
         original = "# Existing instructions\nDo not touch this.\n"
@@ -43,8 +45,6 @@ class EmployMindsTests(unittest.TestCase):
             self.assertEqual(doctor.check_project(project, "both"), [])
             self.assertTrue((project / ".claude/agents/em-verifier.md").exists())
             self.assertTrue((project / ".codex/agents/em-verifier.toml").exists())
-            self.assertTrue((project / ".claude/agents/em-scout.md").exists())
-            self.assertTrue((project / ".codex/agents/em-scout.toml").exists())
             state = json.loads((project / ".employ-minds/install-state.json").read_text())
             self.assertTrue(state["native_agents"])
 

@@ -25,6 +25,8 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Repository doctor
         run: python scripts/doctor.py --self-check
+      - name: Native agent parity
+        run: python scripts/render_agents.py --check
       - name: Router conformance corpus
         run: python scripts/eval_policy.py
       - name: Eval result format smoke test
