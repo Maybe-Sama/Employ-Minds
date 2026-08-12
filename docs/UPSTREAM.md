@@ -1,21 +1,9 @@
-# Upstream provenance
+# Provenance and research boundary
 
-Employ-Minds is not a wholesale vendoring of either upstream project. It is an independently authored synthesis designed to avoid two independent workflow governors competing in the same agent context.
+Employ-Minds is independently designed and maintained with AI assistance. It is not a wholesale vendoring of another agent project.
 
-## Everything Claude Code (ECC)
+Two MIT-licensed projects were the explicit starting inspirations and remain revision-pinned in `UPSTREAMS.lock.json`: **Everything Claude Code (ECC)** and **Superpowers**. Their license texts are preserved under `third_party/`.
 
-- Repository: `affaan-m/ECC`
-- Initial synthesis revision: see `UPSTREAMS.lock.json`
-- License: MIT
-- Ideas used as architectural reference: broad harness composition, skills/agents/tool-native project structure, orchestration breadth, research and reusable engineering conventions.
+The project also studies publicly documented mechanisms from the wider coding-agent ecosystem. `research/PATTERN_ATLAS.md` records what was learned, what was adapted, and what was intentionally rejected. Those systems are research references, not bundled dependencies; Employ-Minds does not copy their branding or claim affiliation.
 
-## Superpowers
-
-- Repository: `obra/superpowers`
-- Initial synthesis revision: see `UPSTREAMS.lock.json`
-- License: MIT
-- Ideas used as process reference: design discipline, TDD, root-cause debugging, structured delegation/review, and verification before completion.
-
-## Synthesis boundary
-
-Employ-Minds intentionally does **not** load both frameworks wholesale. Overlapping concepts are normalized into the Employ-Minds router and gates. Upstream licenses are preserved in `third_party/`; this repository's own implementation is MIT licensed separately.
+General methods such as TDD, root-cause analysis, code review, tool delegation, context summarization, sandboxing, and benchmark evaluation are established software/agent engineering ideas and are not claimed as proprietary. Employ-Minds' contribution is its particular risk-adaptive composition, native cross-harness role contracts, progressive context economy, writer/judge separation, gate ordering, installer, and evaluation discipline.
